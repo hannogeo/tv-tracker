@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="342" height="513" viewBox="0 0 342 513">
+  <rect fill="#1a1a1a" width="342" height="513"/>
+  <g transform="translate(171,256)" fill="#444" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="14">
+    <rect x="-48" y="-24" width="96" height="48" rx="8" fill="none" stroke="#444" stroke-width="2"/>
+    <text x="0" y="8" font-size="24">?</text>
+  </g>
+  <text x="171" y="380" fill="#666" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13">No Poster</text>
+  <text x="171" y="396" fill="#666" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13">Available</text>
+</svg>
