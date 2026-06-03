@@ -52,6 +52,13 @@
   color: var(--text-secondary);
 }
 
+.home-page .card-rating {
+  font-size: 12px;
+  color: #f1c40f;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
 .home-page .episode-progress {
   display: flex;
   align-items: center;

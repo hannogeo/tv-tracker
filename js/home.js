@@ -177,6 +177,30 @@ function attachHomeEvents(container, uid) {
     });
   });
 
+  container.querySelectorAll('[data-action="edit-rating"]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.id);
+      const type = btn.dataset.type;
+      const entries = await getUserEntries(uid);
+      const entry = entries.find((en) => en.tmdbId === id && en.type === type);
+      if (!entry) return;
+      showRatingEditModal(uid, entry);
+    });
+  });
+
+  container.querySelectorAll('[data-action="edit-notes"]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.id);
+      const type = btn.dataset.type;
+      const entries = await getUserEntries(uid);
+      const entry = entries.find((en) => en.tmdbId === id && en.type === type);
+      if (!entry) return;
+      showNotesEditModal(uid, entry);
+    });
+  });
+
   container.querySelectorAll('[data-action="remove-entry"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -274,6 +298,84 @@ function showProgressEditModal(uid, entry) {
       loadHomeTab(entry.type);
     } catch (err) {
       showToast('Failed to update progress', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  });
+}
+
+function showRatingEditModal(uid, entry) {
+  const current = entry.userRating || '';
+  const options = ['', 1,2,3,4,5,6,7,8,9,10].map((v) =>
+    `<option value="${v}" ${String(current) === String(v) ? 'selected' : ''}>${v === '' ? 'Not rated' : v}</option>`
+  ).join('');
+  const html = `
+    <div class="modal-header">
+      <h3>Edit Rating</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);"><strong>${entry.title}</strong></p>
+      <div class="form-group">
+        <label for="ratingSelect">Rating (1-10)</label>
+        <select id="ratingSelect" class="form-select">${options}</select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveRatingBtn">Save</button>
+    </div>
+  `;
+  showModal(html);
+  document.getElementById('saveRatingBtn').addEventListener('click', async () => {
+    const val = parseInt(document.getElementById('ratingSelect').value) || null;
+    const btn = document.getElementById('saveRatingBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
+    try {
+      await updateEntry(uid, entry.tmdbId, entry.type, { userRating: val });
+      closeModal();
+      showToast('Rating updated', 'success');
+      loadHomeTab(entry.type);
+    } catch (err) {
+      showToast('Failed to update rating', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  });
+}
+
+function showNotesEditModal(uid, entry) {
+  const html = `
+    <div class="modal-header">
+      <h3>Edit Notes</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);"><strong>${entry.title}</strong></p>
+      <div class="form-group">
+        <label for="notesTextarea">Notes</label>
+        <textarea id="notesTextarea" class="form-input" rows="4" style="resize:vertical;font-family:inherit;">${entry.notes || ''}</textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveNotesBtn">Save</button>
+    </div>
+  `;
+  showModal(html);
+  document.getElementById('saveNotesBtn').addEventListener('click', async () => {
+    const val = document.getElementById('notesTextarea').value.trim() || '';
+    const btn = document.getElementById('saveNotesBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
+    try {
+      await updateEntry(uid, entry.tmdbId, entry.type, { notes: val });
+      closeModal();
+      showToast('Notes updated', 'success');
+      loadHomeTab(entry.type);
+    } catch (err) {
+      showToast('Failed to update notes', 'error');
       btn.disabled = false;
       btn.textContent = 'Save';
     }

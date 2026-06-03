@@ -158,6 +158,11 @@ function renderTrackedCard(entry) {
     `;
   }
 
+  let ratingHtml = '';
+  if (entry.userRating) {
+    ratingHtml = `<div class="card-rating">★ ${entry.userRating}/10</div>`;
+  }
+
   return `
     <div class="content-card" data-id="${entry.tmdbId}" data-type="${entry.type}">
       <div class="poster-wrapper">
@@ -169,6 +174,8 @@ function renderTrackedCard(entry) {
         <div class="card-dropdown" data-dropdown="${entry.tmdbId}_${entry.type}">
           <button class="card-dropdown-item" data-action="edit-status" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Status</button>
           ${isTv ? `<button class="card-dropdown-item" data-action="edit-progress" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Progress</button>` : ''}
+          <button class="card-dropdown-item" data-action="edit-rating" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Rating</button>
+          <button class="card-dropdown-item" data-action="edit-notes" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Notes</button>
           <button class="card-dropdown-item danger" data-action="remove-entry" data-id="${entry.tmdbId}" data-type="${entry.type}">Remove</button>
         </div>
       </div>
@@ -178,6 +185,7 @@ function renderTrackedCard(entry) {
           <span class="media-badge ${entry.type}">${entry.type === 'tv' ? 'TV' : 'Movie'}</span>
           ${entry.year ? `<span>${entry.year}</span>` : ''}
         </div>
+        ${ratingHtml}
         ${progressHtml}
       </div>
     </div>

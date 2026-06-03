@@ -38,6 +38,16 @@ function renderDetailsContent(container, details, userEntry, type) {
   const isTv = type === 'tv';
   const isInList = !!userEntry;
 
+  let userInfoHtml = '';
+  if (isInList) {
+    if (userEntry.userRating) {
+      userInfoHtml += `<div class="info-item"><div class="info-label">My Rating</div><div class="info-value" style="color:#f1c40f;">★ ${userEntry.userRating}/10</div></div>`;
+    }
+    if (userEntry.notes) {
+      userInfoHtml += `<div class="info-item" style="grid-column:1/-1;"><div class="info-label">My Notes</div><div class="info-value" style="font-weight:400;white-space:pre-wrap;">${userEntry.notes}</div></div>`;
+    }
+  }
+
   container.innerHTML = `
     <div class="details-page">
       <div class="backdrop-wrapper">
@@ -93,6 +103,7 @@ function renderDetailsContent(container, details, userEntry, type) {
               <div class="info-value">${details.status}</div>
             </div>
           `}
+          ${userInfoHtml}
         </div>
         <div class="details-actions">
           ${isInList
@@ -126,6 +137,12 @@ function showAddEditModal(details, userEntry, isEdit) {
   const currentStatus = userEntry ? userEntry.status : 'plan_to_watch';
   const currentEp = userEntry ? (userEntry.episodesWatched || 0) : 0;
   const totalEp = details.totalEpisodes || 0;
+  const currentRating = userEntry ? (userEntry.userRating || '') : '';
+  const currentNotes = userEntry ? (userEntry.notes || '') : '';
+
+  const ratingOptions = ['', 1,2,3,4,5,6,7,8,9,10].map((v) =>
+    `<option value="${v}" ${String(currentRating) === String(v) ? 'selected' : ''}>${v === '' ? 'Not rated' : v}</option>`
+  ).join('');
 
   const html = `
     <div class="modal-header">
@@ -146,6 +163,16 @@ function showAddEditModal(details, userEntry, isEdit) {
           <input type="number" id="detailEpInput" class="form-number" min="0" max="${totalEp}" value="${currentEp}" />
         </div>
       ` : ''}
+      <div class="form-group">
+        <label for="detailRating">My Rating</label>
+        <select id="detailRating" class="form-select">
+          ${ratingOptions}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="detailNotes">Notes</label>
+        <textarea id="detailNotes" class="form-input" rows="3" style="resize:vertical;font-family:inherit;">${currentNotes}</textarea>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -162,6 +189,8 @@ function showAddEditModal(details, userEntry, isEdit) {
       episodesWatched = parseInt(document.getElementById('detailEpInput').value) || 0;
       if (episodesWatched > totalEp) episodesWatched = totalEp;
     }
+    const userRating = parseInt(document.getElementById('detailRating').value) || null;
+    const notes = document.getElementById('detailNotes').value.trim() || '';
 
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
@@ -177,10 +206,12 @@ function showAddEditModal(details, userEntry, isEdit) {
         status,
         episodesWatched,
         totalEpisodes: totalEp,
+        userRating,
+        notes,
       };
 
       if (isEdit) {
-        await updateEntry(uid, details.tmdbId, details.type, { status, episodesWatched });
+        await updateEntry(uid, details.tmdbId, details.type, { status, episodesWatched, userRating, notes });
         showToast('Entry updated', 'success');
       } else {
         await addEntry(uid, data);
