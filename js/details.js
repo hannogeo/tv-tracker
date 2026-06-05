@@ -116,6 +116,14 @@ function renderDetailsContent(container, details, userEntry, type) {
             : `<button class="btn btn-primary" id="addEntryBtn">+ Add to List</button>`
           }
         </div>
+        <div class="tmdb-attribution">
+          <svg width="20" height="20" viewBox="0 0 64 64" style="flex-shrink:0;">
+            <rect x="6" y="14" width="52" height="34" rx="5" fill="var(--accent)"/>
+            <rect x="12" y="20" width="40" height="22" rx="3" fill="var(--bg-card)"/>
+            <polygon points="27,25 27,37 37,31" fill="var(--accent)"/>
+          </svg>
+          Data provided by <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">The Movie Database (TMDB)</a>
+        </div>
       </div>
     </div>
   `;

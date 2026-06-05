@@ -1,5 +1,5 @@
 import { auth, getUserProfile, getUserEntries, updateAvatarConfig, updateEntry } from './firebase.js';
-import { generateAvatarSVG, updateNavbarAvatar, showToast, generateDefaultConfig } from './ui.js';
+import { generateAvatarSVG, updateNavbarAvatar, showToast, generateDefaultConfig, SHAPE_IDS } from './ui.js';
 import { getMovieDetails } from './tmdb.js';
 
 function renderProfilePage() {
@@ -90,10 +90,7 @@ async function loadProfile() {
   }
 }
 
-const SHAPE_NAMES = [
-  'Triangle', 'Circle', 'Diamond', 'Wave', 'Cross',
-  'Star', 'Heart', 'Arrows', 'Hexagon', 'Ring',
-];
+const SHAPE_NAMES = SHAPE_IDS.map(id => id.charAt(0).toUpperCase() + id.slice(1));
 
 const COLOR_ROW_BOLD = [
   '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#14b8a6',
@@ -110,8 +107,14 @@ function swatchRowHTML(colors, selected) {
   ).join('');
 }
 
-function shapeThumbSVG(idx, size) {
-  return generateAvatarSVG({ shape: idx, bg: '#e5e7eb', fg: '#374151' }, size);
+function shapeThumbSVG(shapeId, size) {
+  return generateAvatarSVG({ shape: shapeId, bg: '#e5e7eb', fg: '#374151' }, size);
+}
+
+function getShapeId(shape) {
+  if (typeof shape === 'string') return SHAPE_IDS.includes(shape) ? shape : SHAPE_IDS[0];
+  const oldMap = { 0: 'triangle', 1: 'circle', 2: 'diamond', 8: 'hexagon' };
+  return oldMap[shape] || SHAPE_IDS[0];
 }
 
 function openAvatarEditor(uid, existingConfig, seed) {
@@ -122,7 +125,7 @@ function openAvatarEditor(uid, existingConfig, seed) {
     const def = generateDefaultConfig(seed);
     config = { shape: def.shape, bg: def.bg, fg: def.fg };
   }
-  const currentShape = config.shape !== undefined ? config.shape : 0;
+  const currentShape = config.shape !== undefined ? getShapeId(config.shape) : SHAPE_IDS[0];
   const prevBg = config.bg || '#14b8a6';
   const prevFg = config.fg || '#ffffff';
 
@@ -133,10 +136,10 @@ function openAvatarEditor(uid, existingConfig, seed) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
 
-  const shapeThumbs = SHAPE_NAMES.map((name, i) => {
-    const url = shapeThumbSVG(i, 48);
-    const active = i === selectedShape ? ' style="border-color:var(--accent);"' : '';
-    return `<button class="preset-thumb" data-index="${i}"${active}><img src="${url}" alt="${name}" title="${name}" style="width:48px;height:48px;border-radius:6px;display:block;"/></button>`;
+  const shapeThumbs = SHAPE_IDS.map((id, i) => {
+    const url = shapeThumbSVG(id, 48);
+    const active = id === selectedShape ? ' style="border-color:var(--accent);"' : '';
+    return `<button class="preset-thumb" data-shape="${id}"${active}><img src="${url}" alt="${SHAPE_NAMES[i]}" title="${SHAPE_NAMES[i]}" style="width:48px;height:48px;border-radius:6px;display:block;"/></button>`;
   }).join('');
 
   overlay.innerHTML = `
@@ -187,15 +190,15 @@ function openAvatarEditor(uid, existingConfig, seed) {
     previewEl.src = svg;
   }
 
-  function selectShape(index) {
-    selectedShape = index;
+  function selectShape(id) {
+    selectedShape = id;
     overlay.querySelectorAll('.preset-thumb').forEach(b => b.style.borderColor = 'transparent');
-    overlay.querySelector(`.preset-thumb[data-index="${index}"]`).style.borderColor = 'var(--accent)';
+    overlay.querySelector(`.preset-thumb[data-shape="${id}"]`).style.borderColor = 'var(--accent)';
     updatePreview();
   }
 
   overlay.querySelectorAll('.preset-thumb').forEach(btn => {
-    btn.addEventListener('click', () => selectShape(parseInt(btn.dataset.index)));
+    btn.addEventListener('click', () => selectShape(btn.dataset.shape));
   });
 
   overlay.querySelector('.modal-close').addEventListener('click', close);

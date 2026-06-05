@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/auth.css" />
   <link rel="stylesheet" href="css/home.css" />
   <link rel="stylesheet" href="css/search.css" />
+  <link rel="stylesheet" href="css/browse.css" />
   <link rel="stylesheet" href="css/details.css" />
   <link rel="stylesheet" href="css/settings.css" />
 </head>
@@ -34,7 +35,12 @@
         </button>
         <div class="nav-links" id="navLinks">
           <a href="#/home" class="nav-link" data-route="home">Home</a>
+          <a href="#/browse" class="nav-link" data-route="browse">Browse</a>
           <a href="#/search" class="nav-link" data-route="search">Search</a>
+        </div>
+        <div class="nav-search" id="navSearch" style="display:none;">
+          <input type="text" id="navSearchInput" class="nav-search-input" placeholder="Search..." autocomplete="off" />
+          <div class="nav-search-dropdown" id="navSearchDropdown"></div>
         </div>
         <div class="nav-user" id="navUser">
           <button class="nav-avatar-btn" id="avatarBtn">
@@ -75,6 +81,7 @@
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/home.js"></script>
   <script type="module" src="js/search.js"></script>
+  <script type="module" src="js/browse.js"></script>
   <script type="module" src="js/details.js"></script>
   <script type="module" src="js/profile.js"></script>
   <script type="module" src="js/settings.js"></script>

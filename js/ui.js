@@ -217,15 +217,17 @@ function generateDefaultConfig(seed) {
   const h = hashString(seed);
   const shapeNames = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899','#1a1a2e','#6b7280'];
   const pastelNames = ['#ffffff','#fecaca','#fed7aa','#fef08a','#bbf7d0','#ccfbf1','#bfdbfe','#e9d5ff','#d1d5db','#f1f5f9'];
-  const shape = h % 10;
+  const shapeIdx = h % SHAPE_IDS.length;
   const bgIdx = (h >> 5) % 10;
   const fgIdx = (h >> 10) % 10;
   return {
-    shape,
+    shape: SHAPE_IDS[shapeIdx],
     bg: shapeNames[bgIdx],
     fg: pastelNames[fgIdx],
   };
 }
+
+const SHAPE_IDS = ['triangle', 'circle', 'square', 'diamond', 'hexagon'];
 
 const SHAPES = [
   function triangle(fg, s) {
@@ -234,34 +236,12 @@ const SHAPES = [
   function circle(fg, s) {
     return `<circle cx="${s/2}" cy="${s/2}" r="${s*0.34}" fill="${fg}" opacity="0.85"/>`;
   },
+  function square(fg, s) {
+    const m = s * 0.18;
+    return `<rect x="${m}" y="${m}" width="${s - m * 2}" height="${s - m * 2}" rx="${s * 0.04}" fill="${fg}" opacity="0.85"/>`;
+  },
   function diamond(fg, s) {
     return `<polygon points="${s/2},${s*0.15} ${s*0.85},${s/2} ${s/2},${s*0.85} ${s*0.15},${s/2}" fill="${fg}" opacity="0.85"/>`;
-  },
-  function wave(fg, s) {
-    const w = s * 0.12;
-    return `<path d="M${s*0.15},${s*0.55} Q${s*0.35},${s*0.3} ${s/2},${s*0.55} T${s*0.85},${s*0.55}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" opacity="0.85"/><path d="M${s*0.15},${s*0.7} Q${s*0.35},${s*0.45} ${s/2},${s*0.7} T${s*0.85},${s*0.7}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" opacity="0.85"/>`;
-  },
-  function cross(fg, s) {
-    const w = s * 0.18, h = s * 0.56, r = s * 0.04;
-    return `<rect x="${(s-w)/2}" y="${(s-h)/2}" width="${w}" height="${h}" rx="${r}" fill="${fg}" opacity="0.85"/><rect x="${(s-h)/2}" y="${(s-w)/2}" width="${h}" height="${w}" rx="${r}" fill="${fg}" opacity="0.85"/>`;
-  },
-  function star(fg, s) {
-    const pts = [];
-    for (let i = 0; i < 5; i++) {
-      const a1 = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-      const a2 = a1 + Math.PI / 5;
-      pts.push(`${s/2 + s*0.38*Math.cos(a1)},${s/2 + s*0.38*Math.sin(a1)}`);
-      pts.push(`${s/2 + s*0.15*Math.cos(a2)},${s/2 + s*0.15*Math.sin(a2)}`);
-    }
-    return `<polygon points="${pts.join(' ')}" fill="${fg}" opacity="0.85"/>`;
-  },
-  function heart(fg, s) {
-    const p = (n) => Math.round(n * s);
-    return `<path d="M${s/2},${p(0.78)} C${p(0.05)},${p(0.5)} ${p(0.05)},${p(0.25)} ${p(0.3)},${p(0.18)} C${s/2},${p(0.12)} ${s/2},${p(0.3)} ${s/2},${p(0.3)} C${s/2},${p(0.3)} ${s/2},${p(0.12)} ${p(0.7)},${p(0.18)} C${p(0.95)},${p(0.25)} ${p(0.95)},${p(0.5)} ${s/2},${p(0.78)} Z" fill="${fg}" opacity="0.85"/>`;
-  },
-  function arrows(fg, s) {
-    const w = s * 0.06;
-    return `<path d="M${s*0.25},${s*0.32} L${s*0.55},${s*0.5} L${s*0.25},${s*0.68}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><path d="M${s*0.45},${s*0.32} L${s*0.75},${s*0.5} L${s*0.45},${s*0.68}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
   },
   function hexagon(fg, s) {
     const pts = [];
@@ -271,11 +251,16 @@ const SHAPES = [
     }
     return `<polygon points="${pts.join(' ')}" fill="${fg}" opacity="0.85"/>`;
   },
-  function ring(fg, s) {
-    const r = s * 0.34, ir = s * 0.2;
-    return `<circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${fg}" stroke-width="${r - ir}" opacity="0.85"/>`;
-  },
 ];
+
+function getShapeIndex(shape) {
+  if (typeof shape === 'number') {
+    const oldMap = { 0: 'triangle', 1: 'circle', 2: 'diamond', 8: 'hexagon' };
+    return SHAPE_IDS.indexOf(oldMap[shape] || 'triangle');
+  }
+  const idx = SHAPE_IDS.indexOf(shape);
+  return idx >= 0 ? idx : 0;
+}
 
 function generateAvatarSVG(input, size = 64) {
   let bg, fg, svg;
@@ -283,12 +268,11 @@ function generateAvatarSVG(input, size = 64) {
     const def = generateDefaultConfig(input);
     bg = def.bg;
     fg = def.fg;
-    svg = SHAPES[def.shape](fg, size);
+    svg = SHAPES[getShapeIndex(def.shape)](fg, size);
   } else if (input.shape !== undefined) {
     bg = input.bg;
     fg = input.fg;
-    const idx = input.shape % SHAPES.length;
-    svg = SHAPES[idx](fg, size);
+    svg = SHAPES[getShapeIndex(input.shape)](fg, size);
   } else {
     bg = input.bg;
     fg = input.fg;
@@ -332,4 +316,6 @@ export {
   getAvatarUrl,
   updateNavbarAvatar,
   generateDefaultConfig,
+  getShapeIndex,
+  SHAPE_IDS,
 };

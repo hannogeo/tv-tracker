@@ -5,7 +5,7 @@ let searchTimeout = null;
 let currentFilter = 'both';
 let currentQuery = '';
 
-function renderSearchPage() {
+function renderSearchPage(initialQuery = '') {
   const container = document.getElementById('page-container');
   container.innerHTML = `
     <div class="search-page">
@@ -21,7 +21,7 @@ function renderSearchPage() {
         <button class="filter-btn" data-filter="movie">Movies</button>
       </div>
       <div id="searchResults" class="search-results">
-        <div class="search-info">Start typing to search...</div>
+        ${initialQuery ? '<div class="search-skeleton-grid">' + renderSkeletonCards(12) + '</div>' : '<div class="search-info">Start typing to search...</div>'}
       </div>
     </div>
   `;
@@ -57,6 +57,12 @@ function renderSearchPage() {
       }
     });
   });
+
+  if (initialQuery) {
+    input.value = initialQuery;
+    currentQuery = initialQuery;
+    setTimeout(() => performSearch(initialQuery, currentFilter), 50);
+  }
 }
 
 async function performSearch(query, filter) {
