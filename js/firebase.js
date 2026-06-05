@@ -69,6 +69,14 @@ async function getUserEntriesByStatus(uid, status) {
   return entries;
 }
 
+async function updateAvatarSeed(uid, seed) {
+  await getUserDocRef(uid).update({ avatarSeed: seed });
+}
+
+async function updateAvatarConfig(uid, config) {
+  await getUserDocRef(uid).update({ avatar: config });
+}
+
 async function deleteUserData(uid) {
   const entries = await getEntriesRef(uid).get();
   const batch = db.batch();
@@ -89,4 +97,6 @@ export {
   getUserEntries,
   getUserEntriesByStatus,
   deleteUserData,
+  updateAvatarSeed,
+  updateAvatarConfig,
 };

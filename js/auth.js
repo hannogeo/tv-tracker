@@ -1,12 +1,20 @@
-import { auth, createUserProfile } from './firebase.js';
-import { showToast, getInitials } from './ui.js';
+import { auth, createUserProfile, updateAvatarConfig } from './firebase.js';
+import { generateDefaultConfig } from './ui.js';
 
 function renderLoginPage() {
   const container = document.getElementById('page-container');
   container.innerHTML = `
     <div class="auth-page">
       <div class="auth-container">
-        <div class="auth-logo">TV TRACKER</div>
+        <div class="auth-logo">
+          <svg width="32" height="32" viewBox="0 0 64 64">
+            <rect x="6" y="14" width="52" height="34" rx="5" fill="currentColor"/>
+            <rect x="12" y="20" width="40" height="22" rx="3" fill="var(--bg-card)"/>
+            <polygon points="27,25 27,37 37,31" fill="currentColor"/>
+            <rect x="26" y="48" width="12" height="4" rx="1" fill="currentColor"/>
+          </svg>
+          TV TRACKER
+        </div>
         <p class="auth-subtitle">Track your shows and movies</p>
         <div class="auth-card">
           <h2>Sign In</h2>
@@ -56,7 +64,6 @@ async function handleLogin(e) {
   const password = document.getElementById('loginPassword').value;
   const remember = document.getElementById('rememberMe').checked;
   const errorEl = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
 
   errorEl.classList.remove('visible');
   errorEl.textContent = '';
@@ -64,6 +71,7 @@ async function handleLogin(e) {
   if (!email) { showFieldError('loginEmail', 'Email is required'); return; }
   if (!password) { showFieldError('loginPassword', 'Password is required'); return; }
 
+  const btn = document.getElementById('loginBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner spinner-sm"></span> Signing in...';
 
@@ -92,7 +100,15 @@ function renderRegisterPage() {
   container.innerHTML = `
     <div class="auth-page">
       <div class="auth-container">
-        <div class="auth-logo">TV TRACKER</div>
+        <div class="auth-logo">
+          <svg width="32" height="32" viewBox="0 0 64 64">
+            <rect x="6" y="14" width="52" height="34" rx="5" fill="currentColor"/>
+            <rect x="12" y="20" width="40" height="22" rx="3" fill="var(--bg-card)"/>
+            <polygon points="27,25 27,37 37,31" fill="currentColor"/>
+            <rect x="26" y="48" width="12" height="4" rx="1" fill="currentColor"/>
+          </svg>
+          TV TRACKER
+        </div>
         <p class="auth-subtitle">Track your shows and movies</p>
         <div class="auth-card">
           <h2>Create Account</h2>
@@ -148,7 +164,6 @@ async function handleRegister(e) {
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
   const confirm = document.getElementById('regConfirm').value;
-  const btn = document.getElementById('registerBtn');
 
   clearFieldErrors('regUsernameError', 'regEmailError', 'regPasswordError', 'regConfirmError');
   document.getElementById('registerError').classList.remove('visible');
@@ -161,12 +176,15 @@ async function handleRegister(e) {
   if (password !== confirm) { showFieldError('regConfirm', 'Passwords do not match'); hasError = true; }
   if (hasError) return;
 
+  const btn = document.getElementById('registerBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner spinner-sm"></span> Creating...';
 
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await createUserProfile(cred.user.uid, { username, email });
+    const avatarConfig = generateDefaultConfig(cred.user.uid);
+    await updateAvatarConfig(cred.user.uid, avatarConfig);
     await cred.user.updateProfile({ displayName: username });
   } catch (err) {
     btn.disabled = false;
@@ -180,95 +198,8 @@ async function handleRegister(e) {
   }
 }
 
-function renderChangePassword() {
-  const container = document.getElementById('changePasswordSection');
-  if (!container) return;
-  container.innerHTML = `
-    <h3 style="margin-bottom:16px;">Change Password</h3>
-    <form id="changePasswordForm">
-      <div class="form-group">
-        <label for="cpCurrent">Current Password</label>
-        <div class="input-with-toggle">
-          <input type="password" id="cpCurrent" class="form-input" required autocomplete="current-password" />
-          <button type="button" class="toggle-pw" data-toggle="cpCurrent" aria-label="Toggle password visibility">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-        <div class="error-text" id="cpCurrentError"></div>
-      </div>
-      <div class="form-group">
-        <label for="cpNew">New Password</label>
-        <div class="input-with-toggle">
-          <input type="password" id="cpNew" class="form-input" required autocomplete="new-password" />
-          <button type="button" class="toggle-pw" data-toggle="cpNew" aria-label="Toggle password visibility">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-        <div class="error-text" id="cpNewError"></div>
-      </div>
-      <div class="form-group">
-        <label for="cpConfirm">Confirm New Password</label>
-        <div class="input-with-toggle">
-          <input type="password" id="cpConfirm" class="form-input" required autocomplete="new-password" />
-          <button type="button" class="toggle-pw" data-toggle="cpConfirm" aria-label="Toggle password visibility">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-        <div class="error-text" id="cpConfirmError"></div>
-      </div>
-      <div class="success-text" id="cpSuccess" style="display:none;"></div>
-      <button type="submit" class="btn btn-primary" id="cpBtn">Change Password</button>
-    </form>
-  `;
-  setupPasswordToggles();
-  document.getElementById('changePasswordForm').addEventListener('submit', handleChangePassword);
-}
-
-async function handleChangePassword(e) {
-  e.preventDefault();
-  const current = document.getElementById('cpCurrent').value;
-  const newPw = document.getElementById('cpNew').value;
-  const confirm = document.getElementById('cpConfirm').value;
-  const btn = document.getElementById('cpBtn');
-  const successEl = document.getElementById('cpSuccess');
-
-  clearFieldErrors('cpCurrentError', 'cpNewError', 'cpConfirmError');
-  successEl.style.display = 'none';
-
-  let hasError = false;
-  if (!current) { showFieldError('cpCurrent', 'Current password is required'); hasError = true; }
-  if (!newPw) { showFieldError('cpNew', 'New password is required'); hasError = true; }
-  else if (newPw.length < 8) { showFieldError('cpNew', 'Password must be at least 8 characters'); hasError = true; }
-  if (newPw !== confirm) { showFieldError('cpConfirm', 'Passwords do not match'); hasError = true; }
-  if (hasError) return;
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner spinner-sm"></span> Changing...';
-
-  try {
-    const user = auth.currentUser;
-    const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
-    await user.reauthenticateWithCredential(cred);
-    await user.updatePassword(newPw);
-    successEl.textContent = 'Password changed successfully!';
-    successEl.style.display = 'block';
-    document.getElementById('changePasswordForm').reset();
-  } catch (err) {
-    let msg = 'Failed to change password';
-    if (err.code === 'auth/wrong-password') msg = 'Current password is incorrect';
-    showFieldError('cpCurrent', msg);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Change Password';
-  }
-}
-
 async function handleLogout() {
-  try {
-    await auth.signOut();
-  } catch (err) {
-    console.error('Logout error:', err);
-  }
+  await auth.signOut();
 }
 
 function setupPasswordToggles() {
@@ -276,9 +207,9 @@ function setupPasswordToggles() {
     btn.addEventListener('click', () => {
       const input = document.getElementById(btn.dataset.toggle);
       if (!input) return;
-      const isPassword = input.type === 'password';
-      input.type = isPassword ? 'text' : 'password';
-      btn.innerHTML = isPassword
+      const isPw = input.type === 'password';
+      input.type = isPw ? 'text' : 'password';
+      btn.innerHTML = isPw
         ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
         : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     });
@@ -303,7 +234,5 @@ function clearFieldErrors(...ids) {
 export {
   renderLoginPage,
   renderRegisterPage,
-  renderChangePassword,
   handleLogout,
-  getInitials,
 };

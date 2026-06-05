@@ -172,10 +172,7 @@ function renderTrackedCard(entry) {
         <span class="card-status status-badge ${entry.status}">${statusLabel}</span>
         <button class="card-menu-btn" data-action="card-menu" data-id="${entry.tmdbId}" data-type="${entry.type}">⋮</button>
         <div class="card-dropdown" data-dropdown="${entry.tmdbId}_${entry.type}">
-          <button class="card-dropdown-item" data-action="edit-status" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Status</button>
-          ${isTv ? `<button class="card-dropdown-item" data-action="edit-progress" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Progress</button>` : ''}
-          <button class="card-dropdown-item" data-action="edit-rating" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Rating</button>
-          <button class="card-dropdown-item" data-action="edit-notes" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit Notes</button>
+          <button class="card-dropdown-item" data-action="edit-entry" data-id="${entry.tmdbId}" data-type="${entry.type}">Edit</button>
           <button class="card-dropdown-item danger" data-action="remove-entry" data-id="${entry.tmdbId}" data-type="${entry.type}">Remove</button>
         </div>
       </div>
@@ -207,6 +204,114 @@ function getInitials(email) {
   return (email || '?').charAt(0).toUpperCase();
 }
 
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function generateDefaultConfig(seed) {
+  const h = hashString(seed);
+  const shapeNames = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899','#1a1a2e','#6b7280'];
+  const pastelNames = ['#ffffff','#fecaca','#fed7aa','#fef08a','#bbf7d0','#ccfbf1','#bfdbfe','#e9d5ff','#d1d5db','#f1f5f9'];
+  const shape = h % 10;
+  const bgIdx = (h >> 5) % 10;
+  const fgIdx = (h >> 10) % 10;
+  return {
+    shape,
+    bg: shapeNames[bgIdx],
+    fg: pastelNames[fgIdx],
+  };
+}
+
+const SHAPES = [
+  function triangle(fg, s) {
+    return `<polygon points="${s/2},${s*0.18} ${s*0.85},${s*0.82} ${s*0.15},${s*0.82}" fill="${fg}" opacity="0.85"/>`;
+  },
+  function circle(fg, s) {
+    return `<circle cx="${s/2}" cy="${s/2}" r="${s*0.34}" fill="${fg}" opacity="0.85"/>`;
+  },
+  function diamond(fg, s) {
+    return `<polygon points="${s/2},${s*0.15} ${s*0.85},${s/2} ${s/2},${s*0.85} ${s*0.15},${s/2}" fill="${fg}" opacity="0.85"/>`;
+  },
+  function wave(fg, s) {
+    const w = s * 0.12;
+    return `<path d="M${s*0.15},${s*0.55} Q${s*0.35},${s*0.3} ${s/2},${s*0.55} T${s*0.85},${s*0.55}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" opacity="0.85"/><path d="M${s*0.15},${s*0.7} Q${s*0.35},${s*0.45} ${s/2},${s*0.7} T${s*0.85},${s*0.7}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" opacity="0.85"/>`;
+  },
+  function cross(fg, s) {
+    const w = s * 0.18, h = s * 0.56, r = s * 0.04;
+    return `<rect x="${(s-w)/2}" y="${(s-h)/2}" width="${w}" height="${h}" rx="${r}" fill="${fg}" opacity="0.85"/><rect x="${(s-h)/2}" y="${(s-w)/2}" width="${h}" height="${w}" rx="${r}" fill="${fg}" opacity="0.85"/>`;
+  },
+  function star(fg, s) {
+    const pts = [];
+    for (let i = 0; i < 5; i++) {
+      const a1 = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+      const a2 = a1 + Math.PI / 5;
+      pts.push(`${s/2 + s*0.38*Math.cos(a1)},${s/2 + s*0.38*Math.sin(a1)}`);
+      pts.push(`${s/2 + s*0.15*Math.cos(a2)},${s/2 + s*0.15*Math.sin(a2)}`);
+    }
+    return `<polygon points="${pts.join(' ')}" fill="${fg}" opacity="0.85"/>`;
+  },
+  function heart(fg, s) {
+    const p = (n) => Math.round(n * s);
+    return `<path d="M${s/2},${p(0.78)} C${p(0.05)},${p(0.5)} ${p(0.05)},${p(0.25)} ${p(0.3)},${p(0.18)} C${s/2},${p(0.12)} ${s/2},${p(0.3)} ${s/2},${p(0.3)} C${s/2},${p(0.3)} ${s/2},${p(0.12)} ${p(0.7)},${p(0.18)} C${p(0.95)},${p(0.25)} ${p(0.95)},${p(0.5)} ${s/2},${p(0.78)} Z" fill="${fg}" opacity="0.85"/>`;
+  },
+  function arrows(fg, s) {
+    const w = s * 0.06;
+    return `<path d="M${s*0.25},${s*0.32} L${s*0.55},${s*0.5} L${s*0.25},${s*0.68}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><path d="M${s*0.45},${s*0.32} L${s*0.75},${s*0.5} L${s*0.45},${s*0.68}" fill="none" stroke="${fg}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
+  },
+  function hexagon(fg, s) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i * 2 * Math.PI) / 6 - Math.PI / 2;
+      pts.push(`${s/2 + s*0.38*Math.cos(a)},${s/2 + s*0.38*Math.sin(a)}`);
+    }
+    return `<polygon points="${pts.join(' ')}" fill="${fg}" opacity="0.85"/>`;
+  },
+  function ring(fg, s) {
+    const r = s * 0.34, ir = s * 0.2;
+    return `<circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${fg}" stroke-width="${r - ir}" opacity="0.85"/>`;
+  },
+];
+
+function generateAvatarSVG(input, size = 64) {
+  let bg, fg, svg;
+  if (typeof input === 'string') {
+    const def = generateDefaultConfig(input);
+    bg = def.bg;
+    fg = def.fg;
+    svg = SHAPES[def.shape](fg, size);
+  } else if (input.shape !== undefined) {
+    bg = input.bg;
+    fg = input.fg;
+    const idx = input.shape % SHAPES.length;
+    svg = SHAPES[idx](fg, size);
+  } else {
+    bg = input.bg;
+    fg = input.fg;
+    svg = SHAPES[0](fg, size);
+  }
+  const r = size / 8;
+  return `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" rx="${r}" fill="${bg}"/>${svg}</svg>`)}`;
+}
+
+function getAvatarUrl(seed) {
+  return generateAvatarSVG(seed || 'default');
+}
+
+function updateNavbarAvatar(avatarUrl) {
+  const img = document.getElementById('avatarImg');
+  if (img) {
+    img.src = avatarUrl;
+    img.style.display = 'block';
+  }
+  const placeholder = document.getElementById('avatarPlaceholder');
+  if (placeholder) placeholder.style.display = 'none';
+}
+
 window.closeModal = closeModal;
 
 export {
@@ -223,4 +328,8 @@ export {
   renderTrackedCard,
   getStatusLabel,
   getInitials,
+  generateAvatarSVG,
+  getAvatarUrl,
+  updateNavbarAvatar,
+  generateDefaultConfig,
 };

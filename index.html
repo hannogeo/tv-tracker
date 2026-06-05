@@ -4,21 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TV Tracker</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/auth.css" />
   <link rel="stylesheet" href="css/home.css" />
   <link rel="stylesheet" href="css/search.css" />
   <link rel="stylesheet" href="css/details.css" />
+  <link rel="stylesheet" href="css/settings.css" />
 </head>
 <body>
   <div id="app">
     <nav id="navbar" class="navbar" style="display:none;">
       <div class="nav-container">
-        <a href="#/home" class="nav-logo">TV TRACKER</a>
+        <a href="#/home" class="nav-logo">
+          <svg class="nav-logo-icon" width="24" height="24" viewBox="0 0 64 64">
+            <rect x="6" y="14" width="52" height="34" rx="5" fill="currentColor"/>
+            <rect x="12" y="20" width="40" height="22" rx="3" fill="var(--bg-card)"/>
+            <polygon points="27,25 27,37 37,31" fill="currentColor"/>
+            <rect x="26" y="48" width="12" height="4" rx="1" fill="currentColor"/>
+          </svg>
+          TV TRACKER
+        </a>
         <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
           <span></span><span></span><span></span>
         </button>
@@ -28,11 +38,13 @@
         </div>
         <div class="nav-user" id="navUser">
           <button class="nav-avatar-btn" id="avatarBtn">
-            <span class="avatar-placeholder" id="avatarPlaceholder"></span>
+            <span class="avatar-placeholder" id="avatarPlaceholder" style="display:none;"></span>
+            <img class="avatar-img" id="avatarImg" alt="Avatar" />
             <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 12 12"><path fill="currentColor" d="M6 8L1 3h10z"/></svg>
           </button>
           <div class="dropdown-menu" id="dropdownMenu">
             <a href="#/profile" class="dropdown-item">Profile</a>
+            <a href="#/settings" class="dropdown-item">Settings</a>
             <button class="dropdown-item" id="logoutBtn">Logout</button>
           </div>
         </div>
@@ -65,6 +77,7 @@
   <script type="module" src="js/search.js"></script>
   <script type="module" src="js/details.js"></script>
   <script type="module" src="js/profile.js"></script>
+  <script type="module" src="js/settings.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

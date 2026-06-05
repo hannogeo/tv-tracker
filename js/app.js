@@ -3,22 +3,25 @@ import { renderLoginPage, renderRegisterPage, handleLogout } from './auth.js';
 import { renderHomePage } from './home.js';
 import { renderSearchPage } from './search.js';
 import { renderDetailsPage } from './details.js';
+import { renderSettingsPage, loadTheme } from './settings.js';
 import { renderProfilePage } from './profile.js';
-import { showPageLoader, hidePageLoader, setNavActive, setupNavbar, getInitials } from './ui.js';
+import { showPageLoader, hidePageLoader, setNavActive, setupNavbar, getInitials, showConfirmModal, getAvatarUrl, updateNavbarAvatar, generateAvatarSVG } from './ui.js';
+import { getUserProfile } from './firebase.js';
 
 let currentRoute = '';
-let isInitialized = false;
 
 function initApp() {
+  loadTheme();
   setupNavbar();
 
-  document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+  document.getElementById('logoutBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    showConfirmModal('Are you sure you want to sign out?', async () => {
+      await handleLogout();
+    });
+  });
 
   auth.onAuthStateChanged((user) => {
-    if (!isInitialized) {
-      isInitialized = true;
-    }
-
     updateNavbar(user);
     handleRoute(user);
   });
@@ -29,16 +32,20 @@ function initApp() {
   });
 }
 
-function updateNavbar(user) {
+async function updateNavbar(user) {
   const navbar = document.getElementById('navbar');
-  const avatarPlaceholder = document.getElementById('avatarPlaceholder');
   const navUser = document.getElementById('navUser');
 
   if (user) {
     navbar.style.display = 'block';
     navUser.style.display = 'block';
-    const email = user.email || '';
-    avatarPlaceholder.textContent = getInitials(email);
+    const profile = await getUserProfile(user.uid).catch(() => null);
+    if (profile?.avatar) {
+      updateNavbarAvatar(generateAvatarSVG(profile.avatar, 64));
+    } else {
+      const seed = profile?.avatarSeed || user.uid;
+      updateNavbarAvatar(getAvatarUrl(seed));
+    }
   } else {
     navbar.style.display = 'none';
   }
@@ -46,7 +53,6 @@ function updateNavbar(user) {
 
 function handleRoute(user) {
   const hash = window.location.hash || '#/home';
-  const route = hash.split('?')[0].split('&')[0];
   const path = hash;
 
   if (!user) {
@@ -66,8 +72,6 @@ function handleRoute(user) {
   if (path === currentRoute) return;
   currentRoute = path;
 
-  const pageContainer = document.getElementById('page-container');
-  pageContainer.scrollTop = 0;
   window.scrollTo(0, 0);
 
   showPageLoader();
@@ -90,15 +94,16 @@ function routePage(path) {
   } else if (path === '#/search') {
     renderSearchPage();
     setNavActive('search');
-  } else if (path.startsWith('#/profile')) {
+  } else if (path === '#/profile') {
     renderProfilePage();
+    setNavActive('');
+  } else if (path === '#/settings') {
+    renderSettingsPage();
     setNavActive('');
   } else if (path.startsWith('#/details/')) {
     const match = path.match(/#\/details\/(\d+)&type=(tv|movie)/);
     if (match) {
-      const tmdbId = match[1];
-      const type = match[2];
-      renderDetailsPage(parseInt(tmdbId), type);
+      renderDetailsPage(parseInt(match[1]), match[2]);
       setNavActive('');
     } else {
       renderNotFound();

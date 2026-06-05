@@ -39,15 +39,15 @@ async function loadHomeTab(type) {
     const uid = auth.currentUser.uid;
     const allEntries = await getUserEntries(uid);
     const filtered = allEntries.filter((e) => e.type === type);
-    const sections = getSections(filtered, type);
-    renderSections(content, sections, type);
+    const sections = getSections(filtered);
+    renderSections(content, sections);
     attachHomeEvents(content, uid);
   } catch (err) {
     content.innerHTML = `<div class="empty-state"><p>Error loading entries.</p></div>`;
   }
 }
 
-function getSections(entries, type) {
+function getSections(entries) {
   const order = ['watching', 'plan_to_watch', 'completed', 'dropped', 'on_hold'];
   const labels = {
     watching: 'Watching',
@@ -67,7 +67,7 @@ function getSections(entries, type) {
     .map((key) => ({ key, label: labels[key], items: grouped[key] }));
 }
 
-function renderSections(container, sections, type) {
+function renderSections(container, sections) {
   if (sections.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -153,7 +153,7 @@ function attachHomeEvents(container, uid) {
     });
   });
 
-  container.querySelectorAll('[data-action="edit-status"]').forEach((btn) => {
+  container.querySelectorAll('[data-action="edit-entry"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = parseInt(btn.dataset.id);
@@ -161,43 +161,7 @@ function attachHomeEvents(container, uid) {
       const entries = await getUserEntries(uid);
       const entry = entries.find((en) => en.tmdbId === id && en.type === type);
       if (!entry) return;
-      showStatusEditModal(uid, entry);
-    });
-  });
-
-  container.querySelectorAll('[data-action="edit-progress"]').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = parseInt(btn.dataset.id);
-      const type = btn.dataset.type;
-      const entries = await getUserEntries(uid);
-      const entry = entries.find((en) => en.tmdbId === id && en.type === type);
-      if (!entry) return;
-      showProgressEditModal(uid, entry);
-    });
-  });
-
-  container.querySelectorAll('[data-action="edit-rating"]').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = parseInt(btn.dataset.id);
-      const type = btn.dataset.type;
-      const entries = await getUserEntries(uid);
-      const entry = entries.find((en) => en.tmdbId === id && en.type === type);
-      if (!entry) return;
-      showRatingEditModal(uid, entry);
-    });
-  });
-
-  container.querySelectorAll('[data-action="edit-notes"]').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = parseInt(btn.dataset.id);
-      const type = btn.dataset.type;
-      const entries = await getUserEntries(uid);
-      const entry = entries.find((en) => en.tmdbId === id && en.type === type);
-      if (!entry) return;
-      showNotesEditModal(uid, entry);
+      showEditEntryModal(uid, entry, type);
     });
   });
 
@@ -223,161 +187,87 @@ function attachHomeEvents(container, uid) {
   });
 }
 
-function showStatusEditModal(uid, entry) {
+function showEditEntryModal(uid, entry, currentTab) {
+  const isTv = entry.type === 'tv';
   const statuses = ['watching', 'plan_to_watch', 'completed', 'dropped', 'on_hold'];
+  const total = entry.totalEpisodes || 0;
+  const currentRating = entry.userRating || '';
+
+  const ratingNumbers = [1,2,3,4,5,6,7,8,9,10].map((n) =>
+    `<div class="rating-num ${currentRating === n ? 'active' : ''}" data-value="${n}">${n}</div>`
+  ).join('');
+
   const html = `
     <div class="modal-header">
-      <h3>Edit Status</h3>
+      <h3>Edit ${entry.title}</h3>
       <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);"><strong>${entry.title}</strong></p>
       <div class="form-group">
-        <label for="editStatusSelect">Status</label>
-        <select id="editStatusSelect" class="form-select">
+        <label for="editStatusSel">Status</label>
+        <select id="editStatusSel" class="form-select">
           ${statuses.map((s) => `<option value="${s}" ${s === entry.status ? 'selected' : ''}>${getStatusLabel(s)}</option>`).join('')}
         </select>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="saveStatusBtn">Save</button>
-    </div>
-  `;
-  showModal(html);
-  document.getElementById('saveStatusBtn').addEventListener('click', async () => {
-    const status = document.getElementById('editStatusSelect').value;
-    const btn = document.getElementById('saveStatusBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
-    try {
-      await updateEntry(uid, entry.tmdbId, entry.type, { status });
-      closeModal();
-      showToast('Status updated', 'success');
-      loadHomeTab(entry.type);
-    } catch (err) {
-      showToast('Failed to update status', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Save';
-    }
-  });
-}
-
-function showProgressEditModal(uid, entry) {
-  const total = entry.totalEpisodes || 0;
-  const html = `
-    <div class="modal-header">
-      <h3>Edit Progress</h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);"><strong>${entry.title}</strong></p>
+      ${isTv ? `
+        <div class="form-group">
+          <label for="editEpInput">Episodes Watched (0 - ${total})</label>
+          <input type="number" id="editEpInput" class="form-number" min="0" max="${total}" value="${entry.episodesWatched || 0}" />
+        </div>
+      ` : ''}
       <div class="form-group">
-        <label for="editProgressInput">Episodes Watched (0 - ${total})</label>
-        <input type="number" id="editProgressInput" class="form-number" min="0" max="${total}" value="${entry.episodesWatched || 0}" />
+        <label>My Rating</label>
+        <div class="rating-picker" id="ratingPicker">
+          <div class="rating-num" data-value="">—</div>
+          ${ratingNumbers}
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="editNotesInput">Notes</label>
+        <textarea id="editNotesInput" class="form-input" rows="3" style="resize:vertical;font-family:inherit;">${entry.notes || ''}</textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="saveProgressBtn">Save</button>
+      <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
     </div>
   `;
+
   showModal(html);
-  document.getElementById('saveProgressBtn').addEventListener('click', async () => {
-    const val = parseInt(document.getElementById('editProgressInput').value) || 0;
-    const btn = document.getElementById('saveProgressBtn');
+
+  let selectedRating = currentRating;
+  document.querySelectorAll('#ratingPicker .rating-num').forEach((el) => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('#ratingPicker .rating-num').forEach((e) => e.classList.remove('active'));
+      el.classList.add('active');
+      selectedRating = el.dataset.value ? parseInt(el.dataset.value) : null;
+    });
+  });
+
+  document.getElementById('saveEditBtn').addEventListener('click', async () => {
+    const status = document.getElementById('editStatusSel').value;
+    let episodesWatched = entry.episodesWatched || 0;
+    if (isTv) {
+      episodesWatched = parseInt(document.getElementById('editEpInput').value) || 0;
+      if (episodesWatched > total) episodesWatched = total;
+    }
+    const notes = document.getElementById('editNotesInput').value.trim() || '';
+
+    const btn = document.getElementById('saveEditBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
+
     try {
-      const clamped = Math.min(val, total);
-      const data = { episodesWatched: clamped };
-      if (clamped >= total && total > 0) data.status = 'completed';
+      const data = { status, episodesWatched, userRating: selectedRating, notes };
+      if (episodesWatched >= total && total > 0) data.status = 'completed';
       await updateEntry(uid, entry.tmdbId, entry.type, data);
       closeModal();
-      showToast('Progress updated', 'success');
-      loadHomeTab(entry.type);
+      showToast('Entry updated', 'success');
+      loadHomeTab(currentTab || entry.type);
     } catch (err) {
-      showToast('Failed to update progress', 'error');
+      showToast('Failed to update entry', 'error');
       btn.disabled = false;
-      btn.textContent = 'Save';
-    }
-  });
-}
-
-function showRatingEditModal(uid, entry) {
-  const current = entry.userRating || '';
-  const options = ['', 1,2,3,4,5,6,7,8,9,10].map((v) =>
-    `<option value="${v}" ${String(current) === String(v) ? 'selected' : ''}>${v === '' ? 'Not rated' : v}</option>`
-  ).join('');
-  const html = `
-    <div class="modal-header">
-      <h3>Edit Rating</h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);"><strong>${entry.title}</strong></p>
-      <div class="form-group">
-        <label for="ratingSelect">Rating (1-10)</label>
-        <select id="ratingSelect" class="form-select">${options}</select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="saveRatingBtn">Save</button>
-    </div>
-  `;
-  showModal(html);
-  document.getElementById('saveRatingBtn').addEventListener('click', async () => {
-    const val = parseInt(document.getElementById('ratingSelect').value) || null;
-    const btn = document.getElementById('saveRatingBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
-    try {
-      await updateEntry(uid, entry.tmdbId, entry.type, { userRating: val });
-      closeModal();
-      showToast('Rating updated', 'success');
-      loadHomeTab(entry.type);
-    } catch (err) {
-      showToast('Failed to update rating', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Save';
-    }
-  });
-}
-
-function showNotesEditModal(uid, entry) {
-  const html = `
-    <div class="modal-header">
-      <h3>Edit Notes</h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="margin-bottom:16px;font-size:14px;color:var(--text-secondary);"><strong>${entry.title}</strong></p>
-      <div class="form-group">
-        <label for="notesTextarea">Notes</label>
-        <textarea id="notesTextarea" class="form-input" rows="4" style="resize:vertical;font-family:inherit;">${entry.notes || ''}</textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="saveNotesBtn">Save</button>
-    </div>
-  `;
-  showModal(html);
-  document.getElementById('saveNotesBtn').addEventListener('click', async () => {
-    const val = document.getElementById('notesTextarea').value.trim() || '';
-    const btn = document.getElementById('saveNotesBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
-    try {
-      await updateEntry(uid, entry.tmdbId, entry.type, { notes: val });
-      closeModal();
-      showToast('Notes updated', 'success');
-      loadHomeTab(entry.type);
-    } catch (err) {
-      showToast('Failed to update notes', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Save';
+      btn.textContent = 'Save Changes';
     }
   });
 }

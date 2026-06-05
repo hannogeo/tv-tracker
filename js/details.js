@@ -197,6 +197,8 @@ function showAddEditModal(details, userEntry, isEdit) {
 
     try {
       const uid = auth.currentUser.uid;
+      const runtime = details.runtime || 0;
+
       const data = {
         tmdbId: details.tmdbId,
         type: details.type,
@@ -206,12 +208,13 @@ function showAddEditModal(details, userEntry, isEdit) {
         status,
         episodesWatched,
         totalEpisodes: totalEp,
+        runtime,
         userRating,
         notes,
       };
 
       if (isEdit) {
-        await updateEntry(uid, details.tmdbId, details.type, { status, episodesWatched, userRating, notes });
+        await updateEntry(uid, details.tmdbId, details.type, { status, episodesWatched, runtime, userRating, notes });
         showToast('Entry updated', 'success');
       } else {
         await addEntry(uid, data);
