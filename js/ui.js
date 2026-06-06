@@ -163,6 +163,14 @@ function renderTrackedCard(entry) {
     ratingHtml = `<div class="card-rating">★ ${entry.userRating}/10</div>`;
   }
 
+  let datesHtml = '';
+  if (entry.startDate || entry.finishedDate) {
+    const parts = [];
+    if (entry.startDate) parts.push(`Started ${entry.startDate}`);
+    if (entry.finishedDate) parts.push(`Finished ${entry.finishedDate}`);
+    datesHtml = `<div class="card-dates">${parts.join(' · ')}</div>`;
+  }
+
   return `
     <div class="content-card" data-id="${entry.tmdbId}" data-type="${entry.type}">
       <div class="poster-wrapper">
@@ -184,6 +192,7 @@ function renderTrackedCard(entry) {
         </div>
         ${ratingHtml}
         ${progressHtml}
+        ${datesHtml}
       </div>
     </div>
   `;
@@ -296,6 +305,162 @@ function updateNavbarAvatar(avatarUrl) {
   if (placeholder) placeholder.style.display = 'none';
 }
 
+function initDatePicker(inputEl) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'date-picker-wrap';
+
+  const display = document.createElement('button');
+  display.type = 'button';
+  display.className = 'date-field-btn';
+  const hasValue = !!inputEl.value;
+  display.innerHTML = `<span class="date-field-text${hasValue ? '' : ' empty'}">${hasValue ? formatDateDisplay(inputEl.value) : 'Select date'}</span>
+    <svg class="date-field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+
+  const popup = document.createElement('div');
+  popup.className = 'date-picker-popup';
+  popup.style.display = 'none';
+
+  let viewDate = inputEl.value ? new Date(inputEl.value + 'T00:00:00') : new Date();
+  let selectedDate = inputEl.value || '';
+
+  function renderCalendar() {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dayNames = ['S','M','T','W','T','F','S'];
+
+    let html = `<div class="dp-header">
+      <button class="dp-nav" data-dir="-1">‹</button>
+      <span class="dp-month-year">${monthNames[month]} ${year}</span>
+      <button class="dp-nav" data-dir="1">›</button>
+    </div>
+    <div class="dp-weekdays">${dayNames.map(d => `<span>${d}</span>`).join('')}</div>
+    <div class="dp-days">`;
+
+    for (let i = 0; i < firstDay; i++) {
+      html += '<span class="dp-empty"></span>';
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const classes = ['dp-day'];
+      if (dateStr === selectedDate) classes.push('selected');
+      if (dateStr === todayStr) classes.push('today');
+      html += `<span class="${classes.join(' ')}" data-date="${dateStr}">${d}</span>`;
+    }
+    html += '</div>';
+    popup.innerHTML = html;
+
+    popup.querySelectorAll('.dp-nav').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewDate.setMonth(viewDate.getMonth() + parseInt(btn.dataset.dir));
+        renderCalendar();
+      });
+    });
+
+    popup.querySelectorAll('.dp-day').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedDate = el.dataset.date;
+        inputEl.value = selectedDate;
+        const textEl = display.querySelector('.date-field-text');
+        textEl.textContent = formatDateDisplay(selectedDate);
+        textEl.classList.remove('empty');
+        popup.style.display = 'none';
+      });
+    });
+  }
+
+  display.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popup.style.display === 'block') {
+      popup.style.display = 'none';
+      return;
+    }
+    viewDate = inputEl.value ? new Date(inputEl.value + 'T00:00:00') : new Date();
+    selectedDate = inputEl.value || '';
+    renderCalendar();
+    popup.style.display = 'block';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      popup.style.display = 'none';
+    }
+  });
+
+  inputEl.style.display = 'none';
+  wrapper.appendChild(display);
+  wrapper.appendChild(popup);
+  inputEl.parentNode.insertBefore(wrapper, inputEl.nextSibling);
+}
+
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return 'Select date';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function initCustomSelect(selectEl) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-select-wrap';
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'custom-select-btn';
+  function updateBtn() {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    btn.innerHTML = `${opt ? opt.text : 'Select'} <svg class="custom-select-arrow" width="12" height="12" viewBox="0 0 12 12"><path fill="currentColor" d="M6 8L1 3h10z"/></svg>`;
+  }
+  updateBtn();
+
+  const popup = document.createElement('div');
+  popup.className = 'custom-select-popup';
+  popup.style.display = 'none';
+
+  function renderOptions() {
+    popup.innerHTML = Array.from(selectEl.options).map((opt, i) =>
+      `<div class="custom-select-option${opt.selected ? ' selected' : ''}" data-index="${i}">${opt.text}</div>`
+    ).join('');
+    popup.querySelectorAll('.custom-select-option').forEach(el => {
+      el.addEventListener('click', () => {
+        selectEl.selectedIndex = parseInt(el.dataset.index);
+        updateBtn();
+        popup.style.display = 'none';
+        selectEl.dispatchEvent(new Event('change'));
+      });
+    });
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popup.style.display === 'block') {
+      popup.style.display = 'none';
+      return;
+    }
+    renderOptions();
+    popup.style.display = 'block';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      popup.style.display = 'none';
+    }
+  });
+
+  selectEl.style.display = 'none';
+  wrapper.appendChild(btn);
+  wrapper.appendChild(popup);
+  selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
+
+  return { update: updateBtn };
+}
+
 window.closeModal = closeModal;
 
 export {
@@ -318,4 +483,6 @@ export {
   generateDefaultConfig,
   getShapeIndex,
   SHAPE_IDS,
+  initDatePicker,
+  initCustomSelect,
 };

@@ -1,6 +1,6 @@
 import { auth, getEntry, addEntry, updateEntry } from './firebase.js';
 import { getTvDetails, getMovieDetails, formatTvDetails, formatMovieDetails, getBackdropUrl, getPosterUrl } from './tmdb.js';
-import { showToast, showModal, closeModal, getStatusLabel } from './ui.js';
+import { showToast, showModal, closeModal, getStatusLabel, initDatePicker } from './ui.js';
 
 function renderDetailsPage(tmdbId, type) {
   const container = document.getElementById('page-container');
@@ -42,6 +42,12 @@ function renderDetailsContent(container, details, userEntry, type) {
   if (isInList) {
     if (userEntry.userRating) {
       userInfoHtml += `<div class="info-item"><div class="info-label">My Rating</div><div class="info-value" style="color:#f1c40f;">★ ${userEntry.userRating}/10</div></div>`;
+    }
+    if (userEntry.startDate) {
+      userInfoHtml += `<div class="info-item"><div class="info-label">Started</div><div class="info-value">${userEntry.startDate}</div></div>`;
+    }
+    if (userEntry.finishedDate) {
+      userInfoHtml += `<div class="info-item"><div class="info-label">Finished</div><div class="info-value">${userEntry.finishedDate}</div></div>`;
     }
     if (userEntry.notes) {
       userInfoHtml += `<div class="info-item" style="grid-column:1/-1;"><div class="info-label">My Notes</div><div class="info-value" style="font-weight:400;white-space:pre-wrap;">${userEntry.notes}</div></div>`;
@@ -147,6 +153,8 @@ function showAddEditModal(details, userEntry, isEdit) {
   const totalEp = details.totalEpisodes || 0;
   const currentRating = userEntry ? (userEntry.userRating || '') : '';
   const currentNotes = userEntry ? (userEntry.notes || '') : '';
+  const currentStartDate = userEntry ? (userEntry.startDate || '') : '';
+  const currentFinishedDate = userEntry ? (userEntry.finishedDate || '') : '';
 
   const ratingOptions = ['', 1,2,3,4,5,6,7,8,9,10].map((v) =>
     `<option value="${v}" ${String(currentRating) === String(v) ? 'selected' : ''}>${v === '' ? 'Not rated' : v}</option>`
@@ -178,6 +186,14 @@ function showAddEditModal(details, userEntry, isEdit) {
         </select>
       </div>
       <div class="form-group">
+        <label for="detailStartDate">Started</label>
+        <input type="date" id="detailStartDate" class="form-input" value="${currentStartDate}" />
+      </div>
+      <div class="form-group">
+        <label for="detailFinishedDate">Finished</label>
+        <input type="date" id="detailFinishedDate" class="form-input" value="${currentFinishedDate}" />
+      </div>
+      <div class="form-group">
         <label for="detailNotes">Notes</label>
         <textarea id="detailNotes" class="form-input" rows="3" style="resize:vertical;font-family:inherit;">${currentNotes}</textarea>
       </div>
@@ -189,6 +205,8 @@ function showAddEditModal(details, userEntry, isEdit) {
   `;
 
   showModal(html);
+  initDatePicker(document.getElementById('detailStartDate'));
+  initDatePicker(document.getElementById('detailFinishedDate'));
   const saveBtn = document.getElementById('saveDetailBtn');
   saveBtn.addEventListener('click', async () => {
     const status = document.getElementById('detailStatusSelect').value;
@@ -199,6 +217,8 @@ function showAddEditModal(details, userEntry, isEdit) {
     }
     const userRating = parseInt(document.getElementById('detailRating').value) || null;
     const notes = document.getElementById('detailNotes').value.trim() || '';
+    const startDate = document.getElementById('detailStartDate').value || '';
+    const finishedDate = document.getElementById('detailFinishedDate').value || '';
 
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
@@ -219,10 +239,12 @@ function showAddEditModal(details, userEntry, isEdit) {
         runtime,
         userRating,
         notes,
+        startDate,
+        finishedDate,
       };
 
       if (isEdit) {
-        await updateEntry(uid, details.tmdbId, details.type, { status, episodesWatched, runtime, userRating, notes });
+        await updateEntry(uid, details.tmdbId, details.type, { status, episodesWatched, runtime, userRating, notes, startDate, finishedDate });
         showToast('Entry updated', 'success');
       } else {
         await addEntry(uid, data);

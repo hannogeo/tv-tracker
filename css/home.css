@@ -59,6 +59,13 @@
   font-weight: 600;
 }
 
+.home-page .card-dates {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.3;
+}
+
 .home-page .episode-progress {
   display: flex;
   align-items: center;

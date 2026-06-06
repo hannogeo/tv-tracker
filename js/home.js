@@ -1,5 +1,5 @@
 import { auth, getUserEntries, updateEntry, removeEntry } from './firebase.js';
-import { showToast, showConfirmModal, showModal, closeModal, getStatusLabel, renderTrackedCard } from './ui.js';
+import { showToast, showConfirmModal, showModal, closeModal, getStatusLabel, renderTrackedCard, initDatePicker } from './ui.js';
 
 let scrollPositions = {};
 
@@ -223,6 +223,14 @@ function showEditEntryModal(uid, entry, currentTab) {
         </div>
       </div>
       <div class="form-group">
+        <label for="editStartDate">Started</label>
+        <input type="date" id="editStartDate" class="form-input" value="${entry.startDate || ''}" />
+      </div>
+      <div class="form-group">
+        <label for="editFinishedDate">Finished</label>
+        <input type="date" id="editFinishedDate" class="form-input" value="${entry.finishedDate || ''}" />
+      </div>
+      <div class="form-group">
         <label for="editNotesInput">Notes</label>
         <textarea id="editNotesInput" class="form-input" rows="3" style="resize:vertical;font-family:inherit;">${entry.notes || ''}</textarea>
       </div>
@@ -234,6 +242,9 @@ function showEditEntryModal(uid, entry, currentTab) {
   `;
 
   showModal(html);
+
+  initDatePicker(document.getElementById('editStartDate'));
+  initDatePicker(document.getElementById('editFinishedDate'));
 
   let selectedRating = currentRating;
   document.querySelectorAll('#ratingPicker .rating-num').forEach((el) => {
@@ -252,13 +263,15 @@ function showEditEntryModal(uid, entry, currentTab) {
       if (episodesWatched > total) episodesWatched = total;
     }
     const notes = document.getElementById('editNotesInput').value.trim() || '';
+    const startDate = document.getElementById('editStartDate').value || '';
+    const finishedDate = document.getElementById('editFinishedDate').value || '';
 
     const btn = document.getElementById('saveEditBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
 
     try {
-      const data = { status, episodesWatched, userRating: selectedRating, notes };
+      const data = { status, episodesWatched, userRating: selectedRating, notes, startDate, finishedDate };
       if (episodesWatched >= total && total > 0) data.status = 'completed';
       await updateEntry(uid, entry.tmdbId, entry.type, data);
       closeModal();

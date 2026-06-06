@@ -1,5 +1,5 @@
 import { discover, formatSearchResult, MOVIE_GENRES, TV_GENRES } from './tmdb.js';
-import { renderSkeletonCards } from './ui.js';
+import { renderSkeletonCards, initCustomSelect } from './ui.js';
 
 let currentType = 'tv';
 let currentGenre = '';
@@ -70,6 +70,12 @@ function renderBrowsePage() {
   });
 
   populateGenreSelect('tv');
+  const genreCustom = initCustomSelect(genreEl);
+  const origPopulate = populateGenreSelect;
+  populateGenreSelect = function(type) {
+    origPopulate(type);
+    if (genreCustom) genreCustom.update();
+  };
   loadBrowse(true);
   setupInfiniteScroll();
   setupCardClickDelegation();

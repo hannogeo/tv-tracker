@@ -867,18 +867,17 @@
 /* Custom rating picker */
 .rating-picker {
   display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 3px;
 }
 
 .rating-picker .rating-num {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--input-bg);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -897,6 +896,201 @@
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+.date-picker-wrap {
+  position: relative;
+}
+
+.date-field-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  text-align: left;
+}
+
+.date-field-btn:hover,
+.date-field-btn:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.date-field-text {
+  flex: 1;
+  color: var(--text);
+}
+
+.date-field-text.empty {
+  color: var(--text-muted);
+}
+
+.date-field-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.date-picker-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 300;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  padding: 12px;
+  width: 260px;
+}
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.dp-nav {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all var(--transition);
+}
+
+.dp-nav:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.dp-month-year {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dp-weekdays span {
+  padding: 4px 0;
+}
+
+.dp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dp-empty {
+  padding: 0;
+}
+
+.dp-day {
+  text-align: center;
+  padding: 6px 0;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text);
+}
+
+.dp-day:hover {
+  background: var(--bg-hover);
+}
+
+.dp-day.today {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.dp-day.selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.custom-select-wrap {
+  position: relative;
+}
+
+.custom-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  text-align: left;
+}
+
+.custom-select-btn:hover,
+.custom-select-btn:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.custom-select-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.custom-select-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.custom-select-option {
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition);
+  color: var(--text);
+}
+
+.custom-select-option:hover {
+  background: var(--bg-hover);
+}
+
+.custom-select-option.selected {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .preset-thumb:hover {
